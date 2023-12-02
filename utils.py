@@ -7,6 +7,7 @@ import os, openai
 from config import config
 from typing import Union, List
 from openai import OpenAI
+from sklearn.metrics import confusion_matrix
 
 def get_bigquery_client(type: str) -> Union[bigquery.Client, None]:
     """
@@ -122,3 +123,54 @@ def get_openai_embedding(x: List[str], key_type: str = "personal") -> List[float
     openai_client = OpenAI(api_key=api_key)
     
     return openai_client.embeddings.create(input=x, model="text-embedding-ada-002").data
+
+def print_binary_classifier_metrics(y_true, y_pred):
+    """
+    Calculate evaluation metrics based on the confusion matrix.
+
+    Args:
+    - y_true: array-like, true labels
+    - y_pred: array-like, predicted labels
+
+    Returns:
+    - metrics: dictionary, evaluation metrics
+    """
+
+    cm = confusion_matrix(y_true, y_pred)
+
+    TP = cm[1, 1]
+    TN = cm[0, 0]
+    FP = cm[0, 1]
+    FN = cm[1, 0]
+
+    accuracy = (TP + TN) / (TP + TN + FP + FN)
+    sensitivity = TP / (TP + FN)
+    specificity = TN / (TN + FP)
+    precision = TP / (TP + FP)
+    npv = TN / (TN + FN)
+    fpr = FP / (FP + TN)
+    fdr = FP / (FP + TP)
+    fnr = FN / (FN + TP)
+    f1_score = 2 * (precision * sensitivity) / (precision + sensitivity)
+    mcc = (TP * TN - FP * FN) / np.sqrt((TP + FP) * (TP + FN) * (TN + FP) * (TN + FN))
+
+    metrics = {
+        "Confusion Matrix": pd.DataFrame(cm, index=["Actual Negative", "Actual Positive"], columns=["Predicted Negative", "Predicted Positive"]),
+        "Accuracy": accuracy,
+        "Sensitivity": sensitivity,
+        "Specificity": specificity,
+        "Precision": precision,
+        "Negative Predictive Value": npv,
+        "False Positive Rate": fpr,
+        "False Discovery Rate": fdr,
+        "False Negative Rate": fnr,
+        "F1 Score": f1_score,
+        "Matthews Correlation Coefficient": mcc
+    }
+    
+    print("Evaluation Metrics:")
+    
+    for key, value in metrics.items():
+        print(key + ":")
+        print(value)
+        print("--------------------")

@@ -1,6 +1,6 @@
 config.py
 data/
-20231119_job_market.ipynb
+./20231119_job_market.ipynb
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
