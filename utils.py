@@ -3,11 +3,13 @@ from google.cloud import bigquery
 from google.oauth2 import service_account
 import pandas as pd
 import numpy as np
-import os, openai
+import os, openai, subprocess
 from config import config
 from typing import Union, List
 from openai import OpenAI
 from sklearn.metrics import confusion_matrix
+
+subprocess.run(['huggingface-cli', 'login', '--token', config.get("huggingface_token")])
 
 def get_bigquery_client(type: str) -> Union[bigquery.Client, None]:
     """
