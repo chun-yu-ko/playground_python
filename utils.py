@@ -7,9 +7,13 @@ import os, openai, subprocess
 from config import config
 from typing import Union, List
 from openai import OpenAI
+import plotly.express as px
 from sklearn.metrics import confusion_matrix
 
 subprocess.run(['huggingface-cli', 'login', '--token', config.get("huggingface_token")])
+
+px.set_mapbox_access_token(config.get("mapbox_token"))
+
 
 def get_bigquery_client(type: str) -> Union[bigquery.Client, None]:
     """
