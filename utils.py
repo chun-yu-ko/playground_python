@@ -3,16 +3,19 @@ from google.cloud import bigquery
 from google.oauth2 import service_account
 import pandas as pd
 import numpy as np
-import os, openai, subprocess
+import os, openai, subprocess, requests, replicate
 from config import config
 from typing import Union, List
 from openai import OpenAI
 import plotly.express as px
 from sklearn.metrics import confusion_matrix
+from ucimlrepo import fetch_ucirepo
 
-subprocess.run(['huggingface-cli', 'login', '--token', config.get("huggingface_token")])
+subprocess.run(["huggingface-cli", "login", "--token", config.get("huggingface_token")])
+os.environ["REPLICATE_API_TOKEN"] = config.get("replicate_token")
 
 px.set_mapbox_access_token(config.get("mapbox_token"))
+
 
 
 def get_bigquery_client(type: str) -> Union[bigquery.Client, None]:
@@ -180,3 +183,38 @@ def print_binary_classifier_metrics(y_true, y_pred):
         print(key + ":")
         print(value)
         print("--------------------")
+
+def get_answer_gimini(x):
+    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent"
+    headers = {"Content-Type": "application/json"}
+    params = {"key": config.get("gimini_token")}
+    json_data = {"contents": [{"parts": [{"text": x}]}], "generationConfig": {"temperature": 0}}
+    response = requests.post(url, params = params, headers = headers, json = json_data)
+    return response
+
+def get_answer_llama(x):
+    response = replicate.run("meta/llama-2-70b-chat:02e509c789964a7ea8736978a43525956ef40397be9033abf9fd2badfe68c9e3", input={"debug": False, "top_k": 50, "top_p": 1, "prompt": x, "temperature": 0.01, "system_prompt": "", "max_new_tokens": 500, "min_new_tokens": -1})
+    return response
+
+def get_answer_chatgpt(x):
+    openai_client = OpenAI(api_key = config.get("open_ai_key_personal"))
+    response = openai_client.chat.completions.create(model = "gpt-4-1106-preview", messages = [{"role": "user", "content": x}], temperature = 0)
+    return response
+
+def get_answer_mistral(x):
+    response = replicate.run("mistralai/mistral-7b-v0.1:3ab1d218053dab642ffd4608fcaa4a864cae1d4a9c5dde7b7db939e8af3767af", input={"debug": False, "top_k": 50, "top_p": 1, "prompt": x, "temperature": 0.01, "system_prompt": "", "max_new_tokens": 500, "min_new_tokens": -1})
+    return response
+
+def get_data_from_ucirepo(x):
+    # Fetch data from UCIR repo
+    ori_data = fetch_ucirepo(id=x)
+    
+    # Concatenate features and targets
+    data = pd.concat([ori_data.data.features, ori_data.data.targets], axis=1)
+    
+    # One-hot encode categorical variables
+    for i in ori_data.variables.query("type == 'Categorical'").name.tolist():
+        data = pd.concat([data, pd.get_dummies(data[i], prefix=i, drop_first=True).astype(int)], axis=1)
+        data.drop(i, axis=1, inplace=True)
+    
+    return data
