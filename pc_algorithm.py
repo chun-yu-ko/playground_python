@@ -154,18 +154,17 @@ def pc_apply_rules(graph, seperated_set):
         
         i, j = ij
         
-        for k in [x for x in columns if x not in [i, j]]:
+        if graph_original[i, j] == 0 and graph_original[j, i] == 0:
             
-            # for all pairs of nonadjacent variables i, j with common neighbour k do
-            # if k ∈/ S(i, j) then
-            # Replace i−k − j in Gskel by i → k ← j
-            # end if
-            # end for
-
-            if graph_original[i, k] == 1 and graph_original[k, i] == 1\
-                and graph_original[j, k] == 1 and graph_original[k, j] == 1:
-                graph_original[k, i] = 0
-                graph_original[k, j] = 0
+            for k in [x for x in columns if x not in [i, j]]:
+                
+                if k not in seperated_set[ij]:
+                    
+                    if graph_original[i, k] == 1 and graph_original[k, i] == 1 \
+                        and graph_original[j, k] == 1 and graph_original[k, j] == 1:
+                        
+                        graph_original[k, i] = 0
+                        graph_original[k, j] = 0
 
     graph_final = deepcopy(graph_original)
     
@@ -220,18 +219,17 @@ def pc_apply_rules(graph, seperated_set):
                             graph_final[j, i] = 0
                             change_made = True
                         
-                        # R4 (Never Happens)
+                        # R4
                         # Original: Orient i− j into i → j whenever there are two chains i−k → l and k → l → j such that k and l are nonadjacent.
                         #
                         # Here: Change "i - j" into "i → j" by removing "j → i"
                         #       if "i - k → l" and "k → l → j" and (k, l) are nonadjacent
                         if graph_final[i, k] == 1 and graph_final[k, i] == 1 \
                             and graph_final[k, l] == 1 and graph_final[l, k] == 0 \
-                            and graph_final[l, j] == 1 and graph_final[l, j] == 0 \
+                            and graph_final[l, j] == 1 and graph_final[j, l] == 0 \
                             and graph_final[k, l] == 0 and graph_final[l, k] == 0:
                             graph_final[j, i] = 0
                             change_made = True
-
 
         if not change_made:
             break
