@@ -214,7 +214,10 @@ def get_data_from_ucirepo(x):
     
     # One-hot encode categorical variables
     for i in ori_data.variables.query("type == 'Categorical'").name.tolist():
-        data = pd.concat([data, pd.get_dummies(data[i], prefix=i, drop_first=True).astype(int)], axis=1)
-        data.drop(i, axis=1, inplace=True)
+        try:
+            data = pd.concat([data, pd.get_dummies(data[i], prefix=i, drop_first=True).astype(int)], axis=1)
+            data.drop(i, axis=1, inplace=True)
+        except:
+            None
     
     return data
