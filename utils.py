@@ -3,7 +3,7 @@ from google.cloud import bigquery
 from google.oauth2 import service_account
 import pandas as pd
 import numpy as np
-import os, openai, subprocess, requests, replicate
+import os, openai, subprocess, requests, replicate, json
 from config import config
 from typing import Union, List
 from openai import OpenAI
@@ -221,3 +221,7 @@ def get_data_from_ucirepo(x):
             None
     
     return data
+
+def read_json(x):
+    with open(x, "r") as f:
+        return json.load(f)
